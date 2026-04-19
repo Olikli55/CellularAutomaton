@@ -1,9 +1,9 @@
 export interface Cell {
-    pos:Vector2D,
-    type:string,
+    pos:Vector2;
+
 }
 
-export interface Vector2D{
+export interface Vector2{
     x: number;
     y: number;
 }
