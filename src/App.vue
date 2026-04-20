@@ -1,81 +1,93 @@
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import type {Cell, Vector2} from "@/Types.ts";
+import {onMounted, ref, shallowRef} from "vue";
 const canvas = ref(null);
 const CELL_SIZE = 10;
-const COLS = 100;
-const ROWS = 80;
+const COLS = 10;
+const ROWS = 8;
 const CANVAS_SIZE_H = CELL_SIZE * ROWS;
 const CANVAS_SIZE_W = CELL_SIZE * COLS;
+const ctx = shallowRef<CanvasRenderingContext2D | null>(null); //handling undefined, idk what is  shallowRef
+let timer:number;
 
-let timer: number
-
-const filled = ref<Cell[]>([]);
+//=========================
 const grid = ref<boolean[][]>([]);
+const gridBuffer = ref<boolean[][]>([]);
+//===========================
+
 
 function fillGrid() {
   grid.value = Array.from({ length: ROWS }, () =>
-      Array.from({ length: COLS }, () => true)
+      Array.from({ length: COLS }, () => false)
+  );
+  gridBuffer.value = Array.from({ length: ROWS }, () =>
+      Array.from({ length: COLS }, () => false)
   );
 }
-fillGrid();
 
-
-const mousePos = ref();
-
-
-function ctx2d() {
-  const ctx = canvas.value?.getContext("2d");
-  if (!ctx) {
-   throw new Error("no canvas context");
-  }
-  return ctx;
-}
 
 function clear() {
-  const ctx = ctx2d();
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  if (!ctx.value) {return;}
+  ctx.value.clearRect(0, 0, ctx.value.canvas.width, ctx.value.canvas.height);
 }
 
 function draw() {
-  const ctx = ctx2d();
+  if (!ctx.value) {return;}
 
-  clear();
-
-  ctx.fillStyle = "#34343";
-  for (const cell of filled.value) {
-    const pos:Vector2 = cell.pos
-    ctx.fillRect(pos.x * CELL_SIZE, pos.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+  ctx.value.fillStyle = "#343"
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (! grid.value[y]![x]) {continue;}
+      ctx.value.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
   }
 }
 
 
 function update(){
-  for (const cell of filled.value) {
-    const pos:Vector2 = cell.pos
-
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (grid.value[y]![x]) { // sand
+        //console.log(grid.value[x]![y +1]);
+        if (!grid.value[x]![y + 1]) { // air
+          moveCell(x,y,x,y+1)
+        }
+      }
+    }
   }
+  grid.value = gridBuffer.value;
+
 }
 
-function setCell(pos:Vector2, type:string) {
-  filled.value.push({ pos: pos});
-  grid?.value?[pos.x]?[pos.y] = true;
+function moveCell(x:number, y:number, x1:number, y1:number) {
+  if (x1 < 0 || x1 >= COLS || y1 < 0 || y1 >= ROWS) return;
+  if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+
+  gridBuffer.value[x]![y] = false;
+  gridBuffer.value[x1]![y1] = true;
+
 }
 
 onMounted(() => {
-  filled.value.push({ pos: { x: 0, y: 0 }});
-  filled.value.push({ pos: { x: COLS - 1, y: 0 } });
-  filled.value.push({ pos: { x: 0, y: ROWS - 1 } });
-  filled.value.push({ pos: { x: COLS - 1, y: ROWS - 1 } });
-
+  if (!canvas.value) throw new Error("canvas not mounted");
+  const c = canvas.value.getContext("2d");
+  if (!c) throw new Error("no canvas context");
+  ctx.value = c;
+  fillGrid();
+  grid.value[0]![0] = true ; //no idea what is that !
+  grid.value[0]![1] = true ; //no idea what is that !
+  grid.value[0]![2] = true ; //no idea what is that !
 
   draw();
+
   timer = window.setInterval(() => {
-    update();
+    //clear();
+    //update();
     draw();
-  }, 1000 / 30); //
+
+  }, 1000 ); //
 });
+
 </script>
 
 
@@ -84,7 +96,7 @@ onMounted(() => {
 
 <template>
   <header>
-
+  <h1>!!!!!!</h1>
   </header>
   <div style="display:grid">
     <canvas
