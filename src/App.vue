@@ -49,37 +49,53 @@ function update(){
 
   //console.log(JSON.parse(JSON.stringify(grid.value)));
   // i need to print it in current state thats why i need to use stringify. console.log() prints reference not an actual value
-
+  console.log(gridBuffer.value);
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLS; x++) {
 
       if (chekCell(x,y)) { // sand
         if (!chekCell(x,y+1)) { // air
           moveCell(x,y,x,y+1)
-        }
-        const dirX  = Math.random() >= 0.5 ? 1 : -1;
-        if(!chekCell(x + dirX,y)) {
-          moveCell(x,y,x+ dirX,y)
-        }else if(chekCell(x+dirX*-1,y)) {
-          moveCell(x,y,x+ dirX*-1,y)
+        }else  {
+          const dirX = Math.random() >= 0.5 ? 1 : -1;
+          if (!chekCell(x + dirX, y + 1)) {
+            moveCell(x, y, x + dirX, y + 1)
+          } else if (!chekCell(x + dirX * -1, y + 1)) {
+            moveCell(x, y, x + dirX * -1, y + 1)
+          }
         }
       }
     }
   }
-  clear();
-  draw();
 
+
+}
+
+function onCanvasDown(e: MouseEvent) {
+  const el = canvas.value as HTMLCanvasElement | null;
+  if (!el) return;
+
+  const r = el.getBoundingClientRect();         // canvas position on screen
+  const px = e.clientX - r.left;                // mouse X in canvas pixels
+  const py = e.clientY - r.top;                 // mouse Y in canvas pixels
+
+  const x = Math.floor(px / CELL_SIZE);         // cell X
+  const y = Math.floor(py / CELL_SIZE);         // cell Y
+
+  if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
+
+  gridBuffer.value[x]![y] = true;
+  draw();
 }
 
 function moveCell(x:number, y:number, x1:number, y1:number) {
   if (x1 < 0 || x1 >= COLS || y1 < 0 || y1 >= ROWS) {
     return;
   }
-  if (x < 0 || x >= COLS || y < 0 || y >= ROWS) {
-    return;
-  }
+
   gridBuffer.value[x]![y] = false;
   gridBuffer.value[x1]![y1] = true;
+
 }
 
 
@@ -87,8 +103,8 @@ function chekCell(x:number, y:number):boolean{
   if (x < 0 || x >=  COLS || y < 0|| y >= ROWS) {return true;} //wall
 
 
-  if(gridBuffer.value[x]![y] != undefined){
-    return gridBuffer.value[x]![y];
+  if(grid.value[x]![y] != undefined){
+    return grid.value[x]![y];
   }
   throw new Error("undefined grid")
 }
@@ -100,12 +116,9 @@ onMounted(() => {
   if (!c) throw new Error("no canvas context");
   ctx.value = c;
   fillGrid();
-  gridBuffer.value[0]![0] = true ; //no idea what is that !
-
+  //gridBuffer.value[0]![0] = true ; //no idea what is that !
   draw();
-  grid.value[0]![0] = true;
-
-  animate();
+  //animate();
 
 });
 
@@ -114,11 +127,11 @@ function animate() {
   update();
   draw();
   newCell();
-  requestAnimationFrame(animate); // schedule next frame
+  requestAnimationFrame(animate); //  next frame
 }
 
 function newCell(){
-  gridBuffer.value[0]![0] = true;
+  gridBuffer.value[50]![0] = true;
 }
 
 </script>
@@ -135,11 +148,15 @@ function newCell(){
         ref="canvas"
         :width="CANVAS_SIZE_W"
         :height="CANVAS_SIZE_H"
+        @mousedown="onCanvasDown"
+
     />
 
   </div>
-  <button @mousedown="start()">start</button>
+  <button @mousedown="animate()">next frame</button>
   <button @mousedown="newCell()">newcell</button>
+  <button @mousedown=" draw()">draw</button>
+  <button @mousedown="clear()"> clear</button>
 </template>
 
 
